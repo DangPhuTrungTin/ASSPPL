@@ -8,7 +8,7 @@ options{
 	language=Python3;
 }
 
-program  : (vardec|funcdec)+;
+program  : (vardecl|funcdec)+;
 expr:
 	  LP expr RP
 	| expr (MUL|DIV) expr
@@ -18,10 +18,12 @@ expr:
 	| ID
 	| call
 	; 
-listid: ID CM  listid|ID;
+listid: ID (CM ID)*;
 listexpr:expr CM listexpr|expr;
-
-vardec: mytype listid SM;
+//Variable declaration
+typesyntaxtodec:arraydec|BOOLEAN|INTEGER|REAL|STRING;
+arraydec:ARRAY LSP INTLIT DOUBLEDOT INTLIT RSP OF (BOOLEAN|INTEGER|REAL|STRING);
+vardecl: VAR (listid CL typesyntaxtodec SM)+;
 //statements:
 assignment: ID EQ expr;
 call: ID LP listexpr? RP;
@@ -30,7 +32,7 @@ myreturn: MYRETURN expr;
 funcdec: mytype ID LP pardec RP LB body RB;
 pardec: INTEGER listid |REAL listid |INTEGER listid SM REAL listid ;
 
-body: (((assignment|call|myreturn) SM)|vardec)*;
+body: (((assignment|call|myreturn) SM)|vardecl)*;
 //type
 mytype: INTEGER|REAL;
 INTEGER: I N T E G E R ;
