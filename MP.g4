@@ -19,15 +19,16 @@ boolexpr: LP boolexpr RP
 		;
 intexpr:LP intexpr RP
 	| SUB intexpr
-	| intexpr (MUL|INTEGERDIV|MOD|SUB|ADD) intexpr
+	| intexpr (MUL|INTEGERDIV|MOD) intexpr
+	| intexpr (SUB|ADD) intexpr
 	| INTLIT
 	| ID
 	| invocation
 	;
 realexpr:LP realexpr RP
 		|SUB realexpr
-		|realexpr DIV realexpr
-		|realexpr (MUL|SUB|ADD) realexpr
+		|realexpr (DIV|MUL) realexpr
+		|realexpr (SUB|ADD) realexpr
 		|REALLIT
 		|INTLIT
 		|invocation
