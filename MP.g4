@@ -9,7 +9,7 @@ options{
 }
 
 program  : (vardecl|funcdec)+;
-expr:realexpr|boolexpr|intexpr;
+expr:intexpr|boolexpr|realexpr;
 boolexpr: LP boolexpr RP
 		| NOT boolexpr
 		| boolexpr (EQ|NE|LT|LTE|GT|GTE) boolexpr
@@ -17,6 +17,16 @@ boolexpr: LP boolexpr RP
 		|INTLIT
 		|invocation
 		;
+realexpr:LP realexpr RP
+		|SUB realexpr
+		|realexpr (DIV|MUL) realexpr
+		|realexpr (SUB|ADD) realexpr
+		|REALLIT
+		|intexpr
+		|INTLIT
+		|intexpr 
+		|invocation
+		;//interxpr gom intlit luon r
 intexpr:LP intexpr RP
 	| SUB intexpr
 	| intexpr (MUL|INTEGERDIV|MOD) intexpr
@@ -25,14 +35,6 @@ intexpr:LP intexpr RP
 	| ID
 	| invocation
 	;
-realexpr:LP realexpr RP
-		|SUB realexpr
-		|realexpr (DIV|MUL) realexpr
-		|realexpr (SUB|ADD) realexpr
-		|REALLIT
-		|INTLIT
-		|invocation
-		;
 listid: ID (CM ID)*;
 listexpr:expr (CM expr)*|;
 //Variable declaration
