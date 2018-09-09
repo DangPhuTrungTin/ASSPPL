@@ -9,13 +9,13 @@ options{
 }
 
 program  : (vardecl|funcdec)+;
+//expresstion
 expr:intexpr|boolexpr|realexpr;
 boolexpr: LP boolexpr RP
 		| NOT boolexpr
-		| boolexpr (EQ|NE|LT|LTE|GT|GTE) boolexpr
-		|REALLIT
-		|INTLIT
-		|invocation
+		| intexpr (EQ|NE|LT|LTE|GT|GTE) intexpr
+		|realexpr (EQ|NE|LT|LTE|GT|GTE) realexpr
+		|invocationexpr
 		;
 realexpr:LP realexpr RP
 		|SUB realexpr
@@ -25,16 +25,17 @@ realexpr:LP realexpr RP
 		|intexpr
 		|INTLIT
 		|intexpr 
-		|invocation
-		;//interxpr gom intlit luon r
+		|invocationexpr
+		;//intexpr gom intlit luon r
 intexpr:LP intexpr RP
 	| SUB intexpr
 	| intexpr (MUL|INTEGERDIV|MOD) intexpr
 	| intexpr (SUB|ADD) intexpr
 	| INTLIT
 	| ID
-	| invocation
+	| invocationexpr
 	;
+indexexpr: (ID invocationexpr) LSP intexpr RSP;
 listid: ID (CM ID)*;
 listexpr:expr (CM expr)*|;
 //Variable declaration
@@ -45,8 +46,8 @@ arraydec:ARRAY range_ OF (BOOLEAN|INTEGER|REAL|STRING);
 vardecl: VAR (listid CL mytype SM)+;
 //statements:
 assignment: ID EQ expr;
-//Invocation Expression
-invocation: ID LP listexpr RP;
+//invocation Expression
+invocationexpr: ID LP listexpr RP;
 myreturn: MYRETURN expr;
 //Function declaration:
 funcdec: FUNCTION ID LP pardec RP CL mytype SM vardecl compound_statement;
