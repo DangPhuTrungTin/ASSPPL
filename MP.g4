@@ -7,12 +7,14 @@ from lexererr import *
 options{
 	language=Python3;
 }
-
-program  : (vardecl|funcdecl|proceduredecl)+;
+program  : STRINGLIT;
+//program  : (vardecl|funcdecl|proceduredecl)+;
 //////////expresstion//////////
 expr:intexpr|boolexpr|realexpr|indexexpr|stringexpr|invocationexpr;
 boolexpr: LP boolexpr RP
 		| NOT boolexpr
+		| boolexpr (AND|AND THEN) boolexpr
+		| boolexpr (OR|OR ELSE) boolexpr
 		| intexpr (EQ|NE|LT|LTE|GT|GTE) intexpr
 		|realexpr (EQ|NE|LT|LTE|GT|GTE) realexpr
 		|invocationexpr
@@ -49,11 +51,10 @@ assignmentstatement: (ID|indexexpr) assignment1 EQOP expr SM;
 assignment1: (EQOP (ID|indexexpr))*;
 //if statement:
 ifstatement: IF boolexpr THEN statement (ELSE statement)? ;
-ifstatement_conbreak:  IF boolexpr THEN statement (ELSE statement)? ;
 //while Statement
-whilestatement: WHILE boolexpr DO statement_forloop ;
+whilestatement: WHILE boolexpr DO statement ;
 //for statement
-forstatement: FOR ID EQOP indexexpr (TO|DOWNTO) indexexpr DO statement_forloop ;
+forstatement: FOR ID EQOP indexexpr (TO|DOWNTO) indexexpr DO statement ;
 // break Statement:
 breakstatement: BREAK SM;
 // continue Statement:
@@ -69,10 +70,9 @@ callstatement:ID LP listexpr RP SM;
 ///////////////////////////////////
 
 /////////////statement in use//////////////////
-statement_forloop:statement|breakstatement|continuestatement|ifstatement_conbreak;
-statement_forfuncandproc:statement|returnstatement;
 statement:assignmentstatement|ifstatement|whilestatement|
-		forstatement|compoundstatement|withstatement|callstatement;
+		forstatement|compoundstatement|withstatement|callstatement
+		|breakstatement|continuestatement|returnstatement;
 ////////////////////////////////////////////////
 
 //////////////declaration/////////////
@@ -88,7 +88,7 @@ listid: ID (CM ID)*;
 //Function declaration:
 funcdecl: FUNCTION ID (LP pardec RP) (CL typelist SM) vardecl* compoundstatebody;
 
-compoundstatebody:BEGIN statement_forfuncandproc* END;
+compoundstatebody:BEGIN statement* END;
 pardec: pardec1 (SM pardec1)*|;
 pardec1:listid CL typelist; //dang nghi van cho array [1..22] of integer
 //Procedure declaration
@@ -103,7 +103,7 @@ STRING: S T R I N G;
 ARRAY: A R R A Y;
 ///////////////////////
 
-///////Standfor////////
+///////Convention////////
 //Separators
 LSP:'[';
 RSP:']';
@@ -141,20 +141,21 @@ INTLIT: [0-9]+;
 REALLIT: ('.'Digit+|Digit+'.'|Digit+'.'Digit+)Exponent?
 		| Digit+Exponent;
 BOOLLIT: (T R U E|F A L S E);
-STRINGLIT: '"'([ -~]|Escapesequence)*'"';//ERROR
+//STRINGLIT_ERRORESCAPE:'"'~'"'*?('\\'|'\''|'\b'|'\f'|'\r'|'\t'|'\n');
+//STRINGLIT_UNCLOSE:'"'.*?('\r'|'\n');
+STRINGLIT: '"'('\\'([btnfr"\\]|'\'')|~([\b\t\f\r\n\\"]|'\''))*'"';
 ///////////////////////////////
 
 ////////////comment////////////
-fragment CMSYMBOL:'(*'|'{'|'//';
+//fragment CMSYMBOL:'(*'|'{'|'//';
 // \r\n\t thi s
-COMMENT1:'//'([ -|~\t]|CMSYMBOL|'}'|'*)')* ->skip;
-COMMENT2:'(*'([ -|~\t\r\n]|CMSYMBOL|'}')*'*)' ->skip;
-COMMENT3:'{'([ -|~\t\r\n]|CMSYMBOL|'*)')*'}'->skip;
+COMMENT1:'//'.*?([\r\n]|EOF)->skip ;
+COMMENT2:'(*'.*?'*)' ->skip;
+COMMENT3:'{'.*?'}'->skip;
 // comment:COMMENT1
 // 		| COMMENT2
 // 		| COMMENT3
 // 		 ->skip;
-fragment Escapesequence: ('\\\''|'\\"'|'\\\\'|'\\b'|'\\f'|'\\r'|'\\n'|'\\t');
 // ly do la ',\ duoc dung nhu 1 cu phap nen muon no thanh ki tu f dung \
 ///////////////////////////////
 
@@ -192,10 +193,6 @@ ID: Letter(Letter|Digit)*;//dat ID o cuoi de tru KEYWORD ra
 /////////////////////////////////
 
 WS : [ \t\r\n]+ -> skip ; // skip spaces, tabs, newlines
-ERROR_CHAR: .;
-UNCLOSE_STRING: .;
-ILLEGAL_ESCAPE: .;
-
 /////// replace (?i)///////////////////
 fragment A: [aA];
 fragment B: [bB];
@@ -223,6 +220,10 @@ fragment W: [wW];
 fragment X: [xX];
 fragment Y: [yY];
 fragment Z: [zZ];
+//fragment LigalEscapesequence: '\\'('\''|'"'|'\\'|'b'|'f'|'r'|'n'|'t');
+ERROR_CHAR: .{raise ErrorToken(self.text)};
+UNCLOSE_STRING: '"'('\\'([btnfr"\\]|'\'')|~([\b\t\f\r\n\\"]|'\''))* {raise UncloseString(self.text[1:])};
+ILLEGAL_ESCAPE: '"'~'"'*?('\\'~([btnfr"\\]|'\'')|([\b\t\f\r\n\\]|'\'')) {raise IllegalEscape(self.text[1:])};
 ////NOTE/////
 //cac decl deu khong co SM cuoi
 //comment co o 1 line,sau statement -> sau dau SM
