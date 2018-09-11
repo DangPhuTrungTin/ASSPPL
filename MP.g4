@@ -7,16 +7,16 @@ from lexererr import *
 options{
 	language=Python3;
 }
-program  : STRINGLIT;
-//program  : (vardecl|funcdecl|proceduredecl)+;
+program  : (vardecl|funcdecl|proceduredecl)+;
 //////////expresstion//////////
 expr:intexpr|boolexpr|realexpr|indexexpr|stringexpr|invocationexpr;
 boolexpr: LP boolexpr RP
 		| NOT boolexpr
-		| boolexpr (AND|AND THEN) boolexpr
-		| boolexpr (OR|OR ELSE) boolexpr
+		| boolexpr (AND) boolexpr
+		| boolexpr (OR) boolexpr
 		| intexpr (EQ|NE|LT|LTE|GT|GTE) intexpr
 		|realexpr (EQ|NE|LT|LTE|GT|GTE) realexpr
+		|boolexpr (AND THEN|OR ELSE) boolexpr
 		|invocationexpr
 		|BOOLLIT
 		;
@@ -50,9 +50,9 @@ listexpr:expr (CM expr)*|;
 assignmentstatement: (ID|indexexpr) assignment1 EQOP expr SM;
 assignment1: (EQOP (ID|indexexpr))*;
 //if statement:
-ifstatement: IF boolexpr THEN statement (ELSE statement)? ;
+ifstatement: IF expr THEN statement (ELSE statement)? ;
 //while Statement
-whilestatement: WHILE boolexpr DO statement ;
+whilestatement: WHILE expr DO statement ;
 //for statement
 forstatement: FOR ID EQOP indexexpr (TO|DOWNTO) indexexpr DO statement ;
 // break Statement:
@@ -60,7 +60,7 @@ breakstatement: BREAK SM;
 // continue Statement:
 continuestatement:CONTINUE SM;
 // return Statement:
-returnstatement:RETURN_ expr SM;
+returnstatement:RETURN_ expr? SM;//procedure tra ve rong
 // compound Statement:
 compoundstatement: BEGIN statement* END ;
 // with Statement:
@@ -86,7 +86,7 @@ arraydec:ARRAY range_ OF (BOOLEAN|INTEGER|REAL|STRING);
 listofvardec:(listid CL typelist SM)+;
 listid: ID (CM ID)*;
 //Function declaration:
-funcdecl: FUNCTION ID (LP pardec RP) (CL typelist SM) vardecl* compoundstatebody;
+funcdecl: FUNCTION ID (LP pardec RP) (CL typelist SM) vardecl? compoundstatebody;
 
 compoundstatebody:BEGIN statement* END;
 pardec: pardec1 (SM pardec1)*|;
@@ -143,7 +143,7 @@ REALLIT: ('.'Digit+|Digit+'.'|Digit+'.'Digit+)Exponent?
 BOOLLIT: (T R U E|F A L S E);
 //STRINGLIT_ERRORESCAPE:'"'~'"'*?('\\'|'\''|'\b'|'\f'|'\r'|'\t'|'\n');
 //STRINGLIT_UNCLOSE:'"'.*?('\r'|'\n');
-STRINGLIT: '"'('\\'([btnfr"\\]|'\'')|~([\b\t\f\r\n\\"]|'\''))*'"';
+STRINGLIT: '"'('\\'([btnfr"\\]|'\'')|~([\b\t\f\r\n\\"]|'\''))*'"' {self.text=self.text[1:len(self.text)-1]};
 ///////////////////////////////
 
 ////////////comment////////////
@@ -222,8 +222,9 @@ fragment Y: [yY];
 fragment Z: [zZ];
 //fragment LigalEscapesequence: '\\'('\''|'"'|'\\'|'b'|'f'|'r'|'n'|'t');
 ERROR_CHAR: .{raise ErrorToken(self.text)};
-UNCLOSE_STRING: '"'('\\'([btnfr"\\]|'\'')|~([\b\t\f\r\n\\"]|'\''))* {raise UncloseString(self.text[1:])};
-ILLEGAL_ESCAPE: '"'~'"'*?('\\'~([btnfr"\\]|'\'')|([\b\t\f\r\n\\]|'\'')) {raise IllegalEscape(self.text[1:])};
+UNCLOSE_STRING: '"'('\\'([btnfr"\\]|'\'')|~([\b\t\f\\"]|'\''))*?('\n'|EOF) {raise UncloseString(self.text[1:])};
+ILLEGAL_ESCAPE: '"'~'"'*?('\\'~([btnfr"\\]|'\'')|([\b\t\f\\]|'\'')) {raise IllegalEscape(self.text[1:])};
 ////NOTE/////
 //cac decl deu khong co SM cuoi
 //comment co o 1 line,sau statement -> sau dau SM
+//1: sua unclose,illegal,sua boolexpr tren while,if
