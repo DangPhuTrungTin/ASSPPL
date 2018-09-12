@@ -18,6 +18,7 @@ boolexpr: LP boolexpr RP
 		|realexpr (EQ|NE|LT|LTE|GT|GTE) realexpr
 		|boolexpr (AND THEN|OR ELSE) boolexpr
 		|invocationexpr
+		|indexexpr
 		|BOOLLIT
 		;
 realexpr:LP realexpr RP
@@ -27,7 +28,7 @@ realexpr:LP realexpr RP
 		|REALLIT
 		|intexpr
 		|INTLIT
-		|intexpr
+		|indexexpr
 		|invocationexpr
 		;//intexpr gom intlit luon r
 intexpr:LP intexpr RP
@@ -36,10 +37,15 @@ intexpr:LP intexpr RP
 	| intexpr (SUB|ADD) intexpr
 	| INTLIT
 	| ID
+	|indexexpr
 	| invocationexpr
 	;
-indexexpr: (ID|invocationexpr) LSP intexpr RSP;
-stringexpr:STRINGLIT;
+indexexpr: (ID|invocationexpr) LSP intexpr RSP 
+		 |	indexexpr LSP intexpr RSP;///sua intexpr|indexexpr ////
+stringexpr:STRINGLIT
+		  |indexexpr
+		  |invocationexpr
+;
 //invocation Expression
 invocationexpr: ID LP listexpr RP;
 listexpr:expr (CM expr)*|;
@@ -54,7 +60,7 @@ ifstatement: IF expr THEN statement (ELSE statement)? ;
 //while Statement
 whilestatement: WHILE expr DO statement ;
 //for statement
-forstatement: FOR ID EQOP indexexpr (TO|DOWNTO) indexexpr DO statement ;
+forstatement: FOR ID EQOP expr (TO|DOWNTO) expr DO statement ;//cai 1 nen la intexpr cai 2 la intexpr|realexpr//
 // break Statement:
 breakstatement: BREAK SM;
 // continue Statement:
@@ -92,7 +98,7 @@ compoundstatebody:BEGIN statement* END;
 pardec: pardec1 (SM pardec1)*|;
 pardec1:listid CL typelist; //dang nghi van cho array [1..22] of integer
 //Procedure declaration
-proceduredecl:PROCEDURE ID (LP pardec RP) SM vardecl* compoundstatebody;
+proceduredecl:PROCEDURE ID (LP pardec RP) SM vardecl? compoundstatebody;
 ///////////////////////////////////////
 
 ////////type///////////
@@ -141,15 +147,13 @@ INTLIT: [0-9]+;
 REALLIT: ('.'Digit+|Digit+'.'|Digit+'.'Digit+)Exponent?
 		| Digit+Exponent;
 BOOLLIT: (T R U E|F A L S E);
-//STRINGLIT_ERRORESCAPE:'"'~'"'*?('\\'|'\''|'\b'|'\f'|'\r'|'\t'|'\n');
-//STRINGLIT_UNCLOSE:'"'.*?('\r'|'\n');
 STRINGLIT: '"'('\\'([btnfr"\\]|'\'')|~([\b\t\f\r\n\\"]|'\''))*'"' {self.text=self.text[1:len(self.text)-1]};
 ///////////////////////////////
 
 ////////////comment////////////
 //fragment CMSYMBOL:'(*'|'{'|'//';
 // \r\n\t thi s
-COMMENT1:'//'.*?([\r\n]|EOF)->skip ;
+COMMENT1:'//'.*?([\n]|EOF)->skip ;
 COMMENT2:'(*'.*?'*)' ->skip;
 COMMENT3:'{'.*?'}'->skip;
 // comment:COMMENT1
@@ -222,9 +226,16 @@ fragment Y: [yY];
 fragment Z: [zZ];
 //fragment LigalEscapesequence: '\\'('\''|'"'|'\\'|'b'|'f'|'r'|'n'|'t');
 ERROR_CHAR: .{raise ErrorToken(self.text)};
-UNCLOSE_STRING: '"'('\\'([btnfr"\\]|'\'')|~([\b\t\f\\"]|'\''))*?('\n'|EOF) {raise UncloseString(self.text[1:])};
+UNCLOSE_STRING: '"'('\\'([btnfr"\\]|'\'')|~([\b\t\f\\"]|'\''))*?('\n'|EOF) 
+{
+	if self.text[len(self.text)-1]=="\n":
+		raise UncloseString(self.text[1:len(self.text)-1])
+	else:
+		raise UncloseString(self.text[1:])
+};
 ILLEGAL_ESCAPE: '"'~'"'*?('\\'~([btnfr"\\]|'\'')|([\b\t\f\\]|'\'')) {raise IllegalEscape(self.text[1:])};
 ////NOTE/////
 //cac decl deu khong co SM cuoi
 //comment co o 1 line,sau statement -> sau dau SM
 //1: sua unclose,illegal,sua boolexpr tren while,if
+//if rỗng được k
