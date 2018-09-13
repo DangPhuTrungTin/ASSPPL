@@ -40,8 +40,8 @@ intexpr:LP intexpr RP
 	|indexexpr
 	| invocationexpr
 	;
-indexexpr: (ID|invocationexpr) LSP intexpr RSP 
-		 |	indexexpr LSP intexpr RSP;///sua intexpr|indexexpr ////
+indexexpr: (ID|invocationexpr) LSP expr RSP 
+		 |	indexexpr LSP expr RSP;///sua intexpr|indexexpr ////
 stringexpr:STRINGLIT
 		  |indexexpr
 		  |invocationexpr
