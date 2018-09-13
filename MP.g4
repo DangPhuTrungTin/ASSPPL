@@ -9,37 +9,21 @@ options{
 }
 program  : (vardecl|funcdecl|proceduredecl)+;
 //////////expresstion//////////
-expr:intexpr|boolexpr|realexpr|indexexpr|stringexpr|invocationexpr;
-boolexpr: LP boolexpr RP
-		| NOT boolexpr
-		| boolexpr (AND) boolexpr
-		| boolexpr (OR) boolexpr
-		| intexpr (EQ|NE|LT|LTE|GT|GTE) intexpr
+//expr:intexpr|boolexpr|realexpr|indexexpr|stringexpr|invocationexpr;
+expr: LP expr RP
+		| (NOT|SUB) expr
+		|expr (DIV|MUL|INTEGERDIV|MOD|AND) expr
+		|realexpr (SUB|ADD|OR) realexpr
 		|realexpr (EQ|NE|LT|LTE|GT|GTE) realexpr
 		|boolexpr (AND THEN|OR ELSE) boolexpr
 		|invocationexpr
 		|indexexpr
 		|BOOLLIT
-		;
-realexpr:LP realexpr RP
-		|SUB realexpr
-		|realexpr (DIV|MUL) realexpr
-		|realexpr (SUB|ADD) realexpr
-		|REALLIT
-		|intexpr
+		|STRINGLIT
 		|INTLIT
-		|indexexpr
-		|invocationexpr
-		;//intexpr gom intlit luon r
-intexpr:LP intexpr RP
-	| SUB intexpr
-	| intexpr (MUL|INTEGERDIV|MOD) intexpr
-	| intexpr (SUB|ADD) intexpr
-	| INTLIT
-	| ID
-	|indexexpr
-	| invocationexpr
-	;
+		|REALLIT
+		|ID		
+		;
 indexexpr: (ID|invocationexpr) LSP expr RSP 
 		 |	indexexpr LSP expr RSP;///sua intexpr|indexexpr ////
 stringexpr:STRINGLIT
