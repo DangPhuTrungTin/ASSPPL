@@ -147,7 +147,9 @@ INTLIT: [0-9]+;
 REALLIT: ('.'Digit+|Digit+'.'|Digit+'.'Digit+)Exponent?
 		| Digit+Exponent;
 BOOLLIT: (T R U E|F A L S E);
-STRINGLIT: '"'('\\'([btnfr"\\]|'\'')|~([\b\t\f\r\n\\"]|'\''))*'"' {self.text=self.text[1:len(self.text)-1]};
+STRINGLIT: '"'Stringfactor*?'"'
+{self.text=self.text[1:len(self.text)-1]};
+fragment Stringfactor:'\\'([btnfr"\\]|'\'')|~([\b\t\f\r\n\\"]|'\'');
 ///////////////////////////////
 
 ////////////comment////////////
@@ -226,14 +228,15 @@ fragment Y: [yY];
 fragment Z: [zZ];
 //fragment LigalEscapesequence: '\\'('\''|'"'|'\\'|'b'|'f'|'r'|'n'|'t');
 ERROR_CHAR: .{raise ErrorToken(self.text)};
-UNCLOSE_STRING: '"'('\\'([btnfr"\\]|'\'')|~([\b\t\f\\"]|'\''))*?('\n'|EOF) 
+UNCLOSE_STRING: '"'('\\'([btnfr"\\]|'\'')|~([\b\t\f\\"]|'\''))*?('\n'|EOF)
 {
-	if self.text[len(self.text)-1]=="\n":
-		raise UncloseString(self.text[1:len(self.text)-1])
-	else:
-		raise UncloseString(self.text[1:])
+	a=str(self.text)
+	a = a.replace('\r', '')
+	a = a.replace('\n', '')
+	raise UncloseString(a[1:])
 };
-ILLEGAL_ESCAPE: '"'~'"'*?('\\'~([btnfr"\\]|'\'')|([\b\t\f\\]|'\'')) {raise IllegalEscape(self.text[1:])};
+ILLEGAL_ESCAPE: '"'Stringfactor*?('\\'~([btnfr"\\]|'\''))
+{raise IllegalEscape(self.text[1:])};
 ////NOTE/////
 //cac decl deu khong co SM cuoi
 //comment co o 1 line,sau statement -> sau dau SM
